@@ -1,0 +1,17 @@
+google-cloud-aiplatform
+google-cloud-bigquery
+google-cloud-storage
+google-cloud-pubsub
+google-cloud-secret-manager
+pydantic>=2.0.0
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+httpx
+python-dotenv
+networkx
+pandas
+scipy
+pytest
+google-cloud-logging
