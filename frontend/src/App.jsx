@@ -1,33 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
-import { Activity, Shield, TrendingUp, AlertCircle, Users, Code, DollarSign, Search, Menu, Bell } from 'lucide-react';
+import { Activity, Shield, TrendingUp, AlertCircle, Users, Code, DollarSign, Search, Menu, Bell, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-const MOCK_HEALTH = [
-  { subject: 'Strategic Coherence', A: 80, fullMark: 100 },
-  { subject: 'Org Vitality', A: 70, fullMark: 100 },
-  { subject: 'Tech Foundation', A: 90, fullMark: 100 },
-  { subject: 'Financial Resilience', A: 60, fullMark: 100 },
-  { subject: 'Talent Dynamics', A: 75, fullMark: 100 },
-  { subject: 'Competitive Position', A: 85, fullMark: 100 },
-  { subject: 'Dependency Robustness', A: 50, fullMark: 100 },
-];
-
-const MOCK_TRAJECTORY = [
-  { name: 'Growth', prob: 60 },
-  { name: 'Stable', prob: 30 },
-  { name: 'Pivot', prob: 5 },
-  { name: 'Decline', prob: 4 },
-  { name: 'Collapse', prob: 1 },
-];
+import axios from 'axios';
 
 const Dashboard = () => {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:8000/api/v1/company/nexus-ai/health');
+        setData(response.data);
+        setError(null);
+      } catch (err) {
+        setError("Failed to fetch intelligence report. Ensure backend is running.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const formatHealthData = (score) => {
+    if (!score) return [];
+    return [
+      { subject: 'Strategic Coherence', A: score.strategic_coherence.score * 100 },
+      { subject: 'Org Vitality', A: score.org_vitality.score * 100 },
+      { subject: 'Tech Foundation', A: score.tech_foundation.score * 100 },
+      { subject: 'Financial Resilience', A: score.financial_resilience.score * 100 },
+      { subject: 'Talent Dynamics', A: score.talent_dynamics.score * 100 },
+      { subject: 'Competitive Position', A: score.competitive_position.score * 100 },
+      { subject: 'Dependency Robustness', A: score.dependency_robustness.score * 100 },
+    ];
+  };
+
+  const formatTrajectoryData = (dist) => {
+    if (!dist) return [];
+    return [
+      { name: 'Growth', prob: dist.growth_prob * 100 },
+      { name: 'Stable', prob: dist.stable_prob * 100 },
+      { name: 'Pivot', prob: dist.pivot_prob * 100 },
+      { name: 'Decline', prob: dist.decline_prob * 100 },
+      { name: 'Collapse', prob: dist.collapse_prob * 100 },
+    ];
+  };
+
+  if (loading) {
+    return (
+      <div className="main-content" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '20px' }}>
+        <Loader2 className="animate-spin" size={48} color="var(--accent-primary)" />
+        <p style={{ color: 'var(--text-muted)' }}>Synchronsizing multi-agent swarm signals...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="main-content" style={{ padding: '40px' }}>
+        <div className="glass card" style={{ borderColor: 'var(--danger)', padding: '40px', textAlign: 'center' }}>
+          <AlertCircle size={48} color="var(--danger)" style={{ margin: '0 auto 20px' }} />
+          <h3>Connection Failed</h3>
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()} className="glass" style={{ marginTop: '20px', padding: '8px 20px', color: 'var(--accent-primary)' }}>Retry Connection</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="main-content">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
         <div>
-          <h1 className="gradient-text" style={{ fontSize: '2.5rem', margin: 0 }}>Company Health Intelligence</h1>
-          <p style={{ color: 'var(--text-muted)' }}>Real-time synthesis of digital exhaust and organizational signals.</p>
+          <h1 className="gradient-text" style={{ fontSize: '2.5rem', margin: 0 }}>{data.company_id.toUpperCase()} Intelligence</h1>
+          <p style={{ color: 'var(--text-muted)' }}>Synthesis generated at {new Date(data.timestamp).toLocaleString()}</p>
         </div>
         <div style={{ display: 'flex', gap: '16px' }}>
           <div className="glass" style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -47,13 +97,13 @@ const Dashboard = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2>7-Dimension Health Score</h2>
-            <span className="badge badge-success">Confidence: 82%</span>
+            <span className="badge badge-success">Confidence: {(data.confidence * 100).toFixed(0)}%</span>
           </div>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={MOCK_HEALTH}>
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={formatHealthData(data)}>
                 <PolarGrid stroke="var(--border-color)" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-muted)', fontSize: 12 }} />
+                <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                 <Radar
                   name="Health"
                   dataKey="A"
@@ -75,18 +125,18 @@ const Dashboard = () => {
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2>1-Year Trajectory Forecast</h2>
-            <span className="badge badge-warning">Stale in 4 days</span>
+            <span className="badge badge-warning">Shelf Life: {data.shelf_life_days} Days</span>
           </div>
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={MOCK_TRAJECTORY} layout="vertical">
+              <BarChart data={formatTrajectoryData(data.trajectory_1yr)} layout="vertical">
                 <XAxis type="number" hide />
                 <YAxis dataKey="name" type="category" width={80} tick={{ fill: 'var(--text-muted)' }} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: 'var(--panel-bg)', borderColor: 'var(--border-color)', borderRadius: '8px', color: 'white' }}
                 />
                 <Bar dataKey="prob" radius={[0, 4, 4, 0]}>
-                  {MOCK_TRAJECTORY.map((entry, index) => (
+                  {formatTrajectoryData(data.trajectory_1yr).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={index === 0 ? 'var(--success)' : index > 2 ? 'var(--danger)' : 'var(--accent-primary)'} />
                   ))}
                 </Bar>
@@ -99,20 +149,17 @@ const Dashboard = () => {
       {/* Alerts & Signals */}
       <div style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
         <div className="glass card">
-          <h3>Recent Stealth Alerts</h3>
+          <h3>Synthesis Evidence</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
-            {[
-              { type: 'Strategic Pivot', company: 'Nexus AI', desc: 'Sudden shift in hiring for "Edge Inference" specialists detected.', confidence: 'High' },
-              { type: 'Talent Flight', company: 'Global Cloud', desc: 'Senior engineering attrition increased by 24% in Q2.', confidence: 'Medium' }
-            ].map((alert, i) => (
+            {data.evidence_summary.map((ev, i) => (
               <div key={i} className="glass" style={{ padding: '16px', display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
                 <AlertCircle color="var(--warning)" size={24} />
                 <div>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 600 }}>{alert.company}</span>
-                    <span className="badge badge-warning" style={{ fontSize: '0.6rem' }}>{alert.type}</span>
+                    <span style={{ fontWeight: 600 }}>Signal {i+1}</span>
+                    <span className="badge badge-warning" style={{ fontSize: '0.6rem' }}>CONFIRMED</span>
                   </div>
-                  <p style={{ margin: '4px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{alert.desc}</p>
+                  <p style={{ margin: '4px 0', color: 'var(--text-muted)', fontSize: '0.9rem' }}>{ev}</p>
                 </div>
               </div>
             ))}
@@ -120,13 +167,15 @@ const Dashboard = () => {
         </div>
 
         <div className="glass card">
-          <h3>Narrative vs Reality</h3>
+          <h3>Core Composite</h3>
           <div style={{ marginTop: '20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', fontWeight: 700, color: 'var(--danger)' }}>0.78</div>
-            <p style={{ color: 'var(--text-muted)' }}>Divergence Score</p>
-            <div className="badge badge-danger">High Deception Risk</div>
+            <div style={{ fontSize: '3rem', fontWeight: 700, color: data.composite_score > 0.7 ? 'var(--success)' : 'var(--warning)' }}>{(data.composite_score * 10).toFixed(1)}</div>
+            <p style={{ color: 'var(--text-muted)' }}>Composite Health Index</p>
+            <div className={`badge ${data.composite_score > 0.7 ? 'badge-success' : 'badge-warning'}`}>
+              {data.composite_score > 0.7 ? 'Robust' : 'Under Review'}
+            </div>
             <p style={{ fontSize: '0.8rem', marginTop: '16px', textAlign: 'left' }}>
-              Public narrative focuses on "Growth", but internal signals show infrastructure budget cuts and mass ghost job postings.
+              Base assumption: {data.assumptions[0]}
             </p>
           </div>
         </div>
@@ -177,3 +226,4 @@ function App() {
 }
 
 export default App;
+

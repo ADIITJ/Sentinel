@@ -47,6 +47,14 @@ class CompanyRef(BaseModel):
     company_id: str
     name: str
 
+class DigitalExhaustProfile(BaseModel):
+    company_id: str
+    dev_velocity: float
+    infra_focus: float
+    key_patterns: List[str]
+    anomalies: List[str]
+
+
 class TalentDynamicsProfile(BaseModel):
     company_id: str
     net_talent_flow: float         # positive = gaining
